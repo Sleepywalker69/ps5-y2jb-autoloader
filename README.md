@@ -76,7 +76,7 @@ You can also restore [Y2JB](https://github.com/Gezine/Y2JB) (remote loader) syst
 - or install separate YT app from different region, and use FTP to place `download0.dat` from releases page in `/user/download/PPSA0165*/`
 
 > [!NOTE]
-> Firmwares 10.20–13.60 run Relapse, which requires an active network interface (Wi-Fi or Ethernet connected to a local network; Internet access is not required).
+> Relapse requires an active network interface (Wi-Fi or Ethernet connected to a local network; Internet access is not required). On FW 8.00–10.01, it is used when a network interface is detected (falling back to Lapse otherwise). On FW 10.20–13.60, an active network interface is required.
 
 ## Additional Info
 

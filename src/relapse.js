@@ -6185,9 +6185,10 @@ async function start_relapse() {
                 "which reorders and loses lines when the console dies");
         say("relapse-y2jb starting");
         if (typeof is_jailbroken === "function" && is_jailbroken()) {
-            send_notification("relapse: already jailbroken");
+            await log("Already Jailbroken");
+            send_notification("Already Jailbroken");
             say("already jailbroken - nothing to do");
-            return true;
+            return false;
         }
         if (!ALLOW_AFTER_P2JB) {
             const p2jb_markers = ["/user/temp/common_temp/p2jb.fail"];

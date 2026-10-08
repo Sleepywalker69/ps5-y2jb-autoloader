@@ -2,10 +2,16 @@
 
 ## v1.0.0
 - Added [Relapse](https://github.com/edisnord/relapse-y2jb) - thanks to [edisnord](https://github.com/edisnord)
-  - targets FW 10.20-13.60
+  - Preferred exploit for FW 8.00–13.60 (except 9.05 and 11.40) when an active network connection (Wi-Fi or Ethernet) is detected
+  - Automatically falls back to Lapse on FW <= 10.01 if no active network interface is detected (or on 9.05)
+  - Replaces P2JB (removed)
+- Added 1s delay before autoloading to allow elfldr to stabilize after exploit handoff
 - Updated [elfldr](https://github.com/itsPLK/ps5-elfldr) to v0.26
+- Updated [kexp](https://github.com/ufm42/kexp) to v0.8
 - Updated [unified-autoloader](https://github.com/itsPLK/ps5-unified-autoloader) to v0.1.5
   - includes bundled [Payload Manager](https://github.com/itsPLK/ps5-payload-manager) v0.5.2
+- CI: Generate `download0.dat` UFS2 filesystem image and include in releases (thanks [Feyzee61](https://github.com/Feyzee61))
+- Build: Download prebuilt dependencies matching pinned submodules instead of latest (`./build.sh -d`)
 
 
 ## v0.9.1

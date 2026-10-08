@@ -214,50 +214,30 @@ function find_pattern(buffer, pattern_string) {
 }
 
 function get_current_ip() {
-    // Get interface count
-    const count = Number(syscall(SYSCALL.netgetiflist, 0n, 10n));
-    if (count < 0) {
-        return null;
-    }
-    
-    // Allocate buffer for interfaces
-    const iface_size = 0x1e0;
-    const iface_buf = malloc(iface_size * count);
-    
-    // Get interface list
-    if (Number(syscall(SYSCALL.netgetiflist, iface_buf, BigInt(count))) < 0) {
-        return null;
-    }
-    
-    // Parse interfaces
-    for (let i = 0; i < count; i++) {
-        const offset = BigInt(i * iface_size);
-        
-        // Read interface name (null-terminated string at offset 0)
-        let iface_name = "";
-        for (let j = 0; j < 16; j++) {
-            const c = Number(read8(iface_buf + offset + BigInt(j)));
-            if (c === 0) break;
-            iface_name += String.fromCharCode(c);
+    try {
+        const RECORD = 0x3c0;
+        const IP = 40;
+        const count = Number(syscall(SYSCALL.netgetiflist, 0n, 10n));
+        if (count <= 0 || count > 256) return null;
+        const list = malloc(RECORD * count);
+        if (Number(syscall(SYSCALL.netgetiflist, list, BigInt(count))) < 0) return null;
+        for (let i = 0; i < count; i++) {
+            const octets = [];
+            for (let b = 0; b < 4; b++) {
+                octets.push(Number(read8(list + BigInt(RECORD * i + IP + b))));
+            }
+            if (octets.some((o) => o !== 0)) {
+                return octets.join(".");
+            }
         }
-        
-        // Read IP address (4 bytes at offset 0x28)
-        const ip_offset = offset + 0x28n;
-        const ip1 = Number(read8(iface_buf + ip_offset));
-        const ip2 = Number(read8(iface_buf + ip_offset + 1n));
-        const ip3 = Number(read8(iface_buf + ip_offset + 2n));
-        const ip4 = Number(read8(iface_buf + ip_offset + 3n));
-        const iface_ip = ip1 + "." + ip2 + "." + ip3 + "." + ip4;
-        
-        // Check if this is eth0 or wlan0 with valid IP
-        if ((iface_name === "eth0" || iface_name === "wlan0") && 
-            iface_ip !== "0.0.0.0" && iface_ip !== "127.0.0.1") {
-            return iface_ip;
-        }
-    }
-    
+    } catch (_) { }
     return null;
 }
+
+function has_network_interface() {
+    return get_current_ip() !== null;
+}
+
 
 function is_jailbroken() {
 
