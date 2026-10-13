@@ -126,3 +126,7 @@ send. It does not prove that the configured post-wake coordinator sends the
 ELF or survives the same wake transition. The earlier power-off remains
 unattributed. The marker UFS2 image has not been redeployed for another
 configured test.
+
+The manual-mode image remains the preferred operating path. Further
+automatic post-wake ELF delivery is lower priority and is not a prerequisite
+for the separate 13.60 kstuff work.
