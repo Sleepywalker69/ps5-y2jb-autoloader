@@ -8,6 +8,21 @@ independent receipt was retrieved from that cycle, so the failing component
 is not identified. Do not automatically advance from this test to the
 Payload Manager variant.
 
+An offline branch comparison found the same `main.js`, `postwake_status.js`,
+`relapse.js`, `autoload.js`, Byepervisor ELF, and V3 status ELF in manual and
+marker modes. The runtime input delta is the marker ELF and `postwake.txt`
+selecting it. The common Byepervisor source checks this configuration only
+after AP-complete, hook cleanup, completion-ID write, and a 15-second delay.
+Manual mode records `POSTWAKE_MANUAL` and returns. Configured mode rechecks
+the receipt and title arm, then sends the ELF to loopback elfldr and records
+only transmission. The marker writes its per-attempt file after its own
+receipt check. The recovered failure log ends before cleanup logging
+resumes, so it cannot show which of these later steps ran.
+
+The next controlled comparison is a fresh manual-mode wake with an
+independently matched AP receipt, followed by one separate marker send while
+an operator watches the PS5. This plan has not run.
+
 This branch packages `postwake.txt` as
 `elf=postwake_receipt_marker_1360.elf`. The native coordinator sends that
 one ELF only after its current-attempt AP-complete, hook-zero and restored
