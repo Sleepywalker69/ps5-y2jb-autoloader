@@ -1,1 +1,1 @@
-elf=postwake_receipt_marker_1360.elf
+elf=pldmgr.elf

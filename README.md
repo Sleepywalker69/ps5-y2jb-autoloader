@@ -3,13 +3,16 @@
 </p>
 <h1 align="center">PS5 Y2JB Autoloader</h1>
 <h3 align="center">Fork of <a href="https://github.com/Gezine/Y2JB">Y2JB</a></h3>
-<p><strong>13.60 post-wake marker test branch:</strong> The PPSA01651/PPSA01652
-test image runs Relapse and the Byepervisor Rest Mode stage. Its packaged
-<code>postwake.txt</code> selects one receipt-marker diagnostic ELF after AP
-cleanup. That ELF writes a per-attempt file only if its independent receipt
-and title-arm checks pass. It does not launch Payload Manager or other
-payloads. This test branch is not the manual-mode default; the general
-autoloader instructions below describe upstream mode.</p>
+<p><strong>13.60 optional Payload Manager branch:</strong> The PPSA01651/PPSA01652
+image is configured to run Relapse and the Byepervisor Rest Mode stage. Its packaged
+<code>postwake.txt</code> selects <code>pldmgr.elf</code> after the native
+same-attempt AP and hook-cleanup receipt passes. The resumed coordinator
+checks that port 8084 was not already occupied and waits for Payload Manager
+version 0.5.2 before recording <code>POSTWAKE_PM_READY</code>. This branch
+has not been tested on PS5 and does not prove that Payload Manager's later
+autoloaded ELFs completed. It is separate from the manual-mode default and
+the receipt-marker test.
+The general autoloader instructions below describe upstream mode.</p>
 &nbsp;
 <p align="center">Automatically loads the kernel exploit and your elf payloads.<br>Supports PS5 firmwares 4.03-13.60</p>
 
