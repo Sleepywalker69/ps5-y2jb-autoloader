@@ -46,15 +46,32 @@ has not been verified.
   made no console request during the Rest Mode/wake cycle. After waking,
   the user reported a kernel panic and then a powered-off console. The
   exact title, arm ID, AP result, marker execution, and fault location
-  remain unknown because no post-wake records were collected.
+  remain unknown. A recovery capture on the next boot found the last saved
+  Byepervisor session through hook arming but no later event for that
+  session. File logging pauses during the hook, so this gap does not
+  identify the failing stage. No arm or marker file survived the reboot.
 - Relative to the manual branch, this branch selects the diagnostic ELF in
   `postwake.txt` and packages that ELF. The timing makes the added path a
   candidate cause; it does not prove which instruction or component failed.
   No marker success claim or later-payload launch claim follows from this run.
 
-The console test is paused. A future investigation should preserve recovery
-logs first, audit the manual-to-marker delta offline, and use a separate
-observable control before another configured ELF launch.
+Recovery logs were preserved privately. Both titles were then restored to
+the known manual-mode image, 336,789,504 bytes, SHA-256
+`ff1ec8eea341fc282416ba07047e51a6d0e074019c8ef10bf6b4ccea777725c0`,
+and fully read back. The prior marker images remain in backup files. The
+restored image has not run on this boot. The user is unavailable to observe
+a live test now, so no new YouTube launch, ELF send or Rest Mode cycle
+followed.
+
+The next comparison should run one manual-mode wake on a fresh boot with
+an operator watching. Require one current title arm, independent V3
+AP-complete receipt with zero hook and restored gate/IST, and a matching
+`POSTWAKE_MANUAL` event. Only after that passes should the same pinned marker
+ELF be sent separately through elfldr once, requiring its exact per-attempt
+file and a second matching receipt. The private control parser has five
+passing offline failure-path tests; it has not run on PS5. Do not redeploy
+the configured marker image or advance to Payload Manager based on this
+offline control.
 
 ## Historical planned acceptance gate (not passed)
 

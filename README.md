@@ -7,7 +7,9 @@
 powered off after wake with this image installed; no marker or independent
 receipt was recovered from that cycle. The fault location is unknown. This
 branch selects a receipt-marker ELF after the Byepervisor stage and does not
-launch Payload Manager. See <a href="POSTWAKE_MARKER_1360.md">the test record</a>
+launch Payload Manager. Both installed YouTube titles have since been restored
+to the verified manual-mode image; this branch is not installed. See
+<a href="POSTWAKE_MARKER_1360.md">the test record</a>
 before using this image. The general autoloader instructions below describe
 upstream mode.</p>
 &nbsp;
