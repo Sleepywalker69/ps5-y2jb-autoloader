@@ -96,6 +96,7 @@ jobs:
 
           This build integrates the following external dependency versions:
           - [itsPLK/ps5-elfldr](https://github.com/itsPLK/ps5-elfldr): [${ELFLDR_VER}](https://github.com/itsPLK/ps5-elfldr/releases/tag/${ELFLDR_VER})
+          - The pinned elfldr release binary is patched by `scripts/patch_elfldr_lan.py` to bind `0.0.0.0:9021` for this isolated PPSA01652 test. The script verifies the original hash and exact two-byte change.
           - [itsPLK/ps5-kexp](https://github.com/itsPLK/ps5-kexp): [${KEXP_VER}](https://github.com/itsPLK/ps5-kexp/releases/tag/${KEXP_VER})
           - [itsPLK/ps5-unified-autoloader](https://github.com/itsPLK/ps5-unified-autoloader): [${AUTOLOADER_VER}](https://github.com/itsPLK/ps5-unified-autoloader/releases/tag/${AUTOLOADER_VER})
 

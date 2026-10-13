@@ -99,5 +99,17 @@ else
     fi
 fi
 
+# This isolation build must accept one ELF from the host after Relapse. Patch
+# only the reviewed bind-address immediate in the exact pinned release ELF.
+# The patcher checks the whole input hash and refuses any other binary.
+PINNED_ELFLDR="$DEST_DIR/elfldr-ps5-v0.26-bb1e117.elf"
+LAN_ELFLDR="$DEST_DIR/elfldr-ps5-v0.26-bb1e117-lan.elf"
+if [ ! -f "$PINNED_ELFLDR" ]; then
+    echo "Error: expected pinned elfldr missing: $PINNED_ELFLDR" >&2
+    exit 1
+fi
+python3 scripts/patch_elfldr_lan.py "$PINNED_ELFLDR" "$LAN_ELFLDR"
+rm -f "$PINNED_ELFLDR"
+
 echo "Creating Y2JB update package..."
 make all BUILD_TYPE=$BUILD_TYPE
