@@ -1229,7 +1229,8 @@ function trigger() {
             return;
         }
 
-        // Isolated V3 receipt test: no configured payloads or Payload Manager.
+        // The resumed hook ELF reads postwake.txt after AP cleanup. This
+        // process may close during Rest Mode, so it cannot own that launch.
         const relapseState = (typeof globalThis.relapse_status === 'function')
             ? globalThis.relapse_status() : null;
         if (!relapseState || !relapseState.handedOff ||
@@ -1261,9 +1262,9 @@ function trigger() {
             receiptText += 'status: passed boot=' + status.bootSec + '.' +
                 String(status.bootUsec).padStart(6, '0') + '\n';
             write_file(receiptPath, receiptText);
-            send_notification('Byepervisor V3 receipt passed\nNo later payloads sent');
+            send_notification('Byepervisor V3 receipt passed\nPost-wake config handled by resumed ELF');
             if (typeof window.updateProgress === 'function') {
-                window.updateProgress(100, 'Post-wake receipt passed. No later payloads sent.');
+                window.updateProgress(100, 'Post-wake receipt passed.');
             }
         } catch (error) {
             receiptText += 'stopped: ' + ((error && error.message) || String(error)) + '\n';

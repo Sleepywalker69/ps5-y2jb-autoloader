@@ -48,7 +48,7 @@ async function run(chunks, options = {}) {
     vm.createContext(context);
     vm.runInContext(source, context);
     context.bpr_elf_path = () => '/fake.elf';
-    context.bpr_read_elf = () => ({ bytes: 0x2000n, size: 182784n });
+    context.bpr_read_elf = () => ({ bytes: 0x2000n, size: 209408n });
     let result;
     let error;
     try { result = await context.bpr_launch_v3_attempt(); }
@@ -65,7 +65,7 @@ assert.ifError(outcome.error);
 assert.strictEqual(outcome.result.armId, 0x6ace3357104ff054n);
 assert.strictEqual(outcome.result.textBase, 0xffffffff998a0000n);
 assert.strictEqual(outcome.result.pmapRoot, 0x1d6f4000n);
-assert.strictEqual(outcome.sent, 182784n);
+assert.strictEqual(outcome.sent, 209408n);
 assert(outcome.shutdown && outcome.closed === 1);
 assert.strictEqual(outcome.connects, 1);
 
@@ -85,13 +85,13 @@ assert.ifError(outcome.error);
 assert.strictEqual(outcome.connects, 4);
 assert.strictEqual(outcome.sleeps, 3);
 assert.strictEqual(outcome.closed, 4);
-assert.strictEqual(outcome.sent, 182784n);
+assert.strictEqual(outcome.sent, 209408n);
 
 outcome = await run(['BPR_ARM_V2 id=0000000000000000 base=ffffffff998a0000 ' +
                'root=000000001d6f4000\n']);
 assert.match(outcome.error.message, /without arm line/);
 assert.strictEqual(outcome.closed, 1);
 
-console.log('V3 hook transport: 5 cases passed');
+console.log('Post-wake hook transport: 5 cases passed');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

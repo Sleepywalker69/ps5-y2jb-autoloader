@@ -98,3 +98,29 @@ yet run. The screenshot identifies
 PPSA01652; a later FTP listing showed only a PPSA01651 failure log, so that
 saved file cannot be attributed to the photographed launch. YouTube survival,
 post-wake JS continuation, and native autoload remain unproved.
+
+## Optional native post-wake candidate
+
+The revised PPSA01651 launch subsequently produced a pre-Rest arm file whose
+ID, kernel text base and pmap root exactly matched the independent post-wake
+V3 status. That status reported AP-complete, zero hook state and restored
+gate/IST. The home screen remained responsive. The YouTube process produced
+no post-wake JS continuation; the native Byepervisor process is therefore the
+candidate coordinator.
+
+The package now contains `postwake.txt` and the 13.60 native coordinator.
+If the config is absent or says `manual`, no extra ELF is sent. The current
+test image explicitly says `elf=pldmgr.elf`; only that one ELF is sent after
+receipt validation. It must answer HTTP `/version` on port 8084 with body
+`0.5.2` to count as ready. Another safe filename can be configured, but its
+socket send is not proof that it started. The config parser passed 13 native
+host cases. The Y2JB parsers passed 48 cases, its transport passed five cases,
+and the ZIP passed CRC and embedded hashes.
+
+Current offline ZIP SHA-256:
+`24ad2fe211985c7cdd169baf24c88c36a34b148ade9cdabb7d35615c12c25550`.
+Native coordinator ELF: 209,408 bytes, SHA-256
+`4736c131f13d6879eabdcde4ea2911678a4d1919e9a2e8e72c7a638d4ba484cd`.
+Payload Manager v0.5.2 ELF: 2,410,776 bytes, SHA-256
+`62b3ba2a4937c2afc502f9a4e7242cca538610ebb4ae2800c7c6f72e7f268e7c`.
+No console installation or live launch of this revised package has occurred.

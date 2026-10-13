@@ -199,9 +199,9 @@ async function bpr_query_elfldr_status(expectedArm) {
 }
 
 async function bpr_launch_v3_attempt() {
-    const payload = bpr_read_elf(bpr_elf_path('byepervisor_reborn_attempt_receipt_v3_1360.elf'));
-    if (payload.size !== 182784n)
-        throw new Error('unexpected V3 hook ELF length');
+    const payload = bpr_read_elf(bpr_elf_path('byepervisor_reborn_postwake_config_1360.elf'));
+    if (payload.size !== 209408n)
+        throw new Error('unexpected post-wake hook ELF length');
     const { fd } = await bpr_connect_elfldr('hook', 5);
     try {
         let sent = 0n;
