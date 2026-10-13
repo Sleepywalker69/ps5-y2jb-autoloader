@@ -30,7 +30,7 @@ jobs:
               'attempt_status_v3_1360.elf': '3b17d7e24c44b2341e3a65b133f74f052d95540ba453becd58378aaa2f35e4a5',
               'byepervisor_reborn_postwake_sigpipe_v2_1360.elf': 'fceb24e5f83f3d14358fe4741e5e65611ac68781ab4edb80ff8e839f33010afb',
               'pldmgr.elf': '62b3ba2a4937c2afc502f9a4e7242cca538610ebb4ae2800c7c6f72e7f268e7c',
-              'postwake_receipt_marker_1360.elf': '49374abf4a1dc10f43ae3f8cfb2e1009de6fc2cd6fb9dd71e514bbbc1f2effb2',
+              'postwake_receipt_marker_1360.elf': 'ca956d99487f28f542aee168e2ae22589e91b037db248857d23783f18f1a6df1',
               'postwake.txt': '47a50b6f99d329a0d0ff66ac43ae871739100e67dbc90bf92d2d0d231ac67002',
           }
           with zipfile.ZipFile('y2jb_update.zip') as archive:

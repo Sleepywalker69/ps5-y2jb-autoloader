@@ -12,6 +12,13 @@ gate/IST result. It exits without a marker if a check fails. A matching new
 file plus a separate post-wake receipt read will prove configured ELF
 execution on that attempt; a socket send alone will not.
 
+The marker accepts the exact three-line title/arm/base/root prefix even if
+the resumed YouTube script has appended its post-wake status. The earlier
+EOF requirement could reject a valid current attempt during that race.
+Missing, stale, mismatched, or oversized arm records still fail. The
+recompiled marker ELF is 110,936 bytes, SHA-256
+`ca956d99487f28f542aee168e2ae22589e91b037db248857d23783f18f1a6df1`.
+
 The marker does not start Payload Manager or other ELFs. It does not change
 kernel or A53 state. This branch is a controlled test image; live execution
 has not yet been verified. The installed manual-mode image is unchanged until
