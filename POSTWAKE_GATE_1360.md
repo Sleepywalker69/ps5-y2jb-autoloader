@@ -167,3 +167,64 @@ report SHA-256 is `810f28a322ab9cdfe6f055d73db4365ae06fb2f37478a70cd647cf7363339
 PPSA01651's old image hash differed from the expected V1 image, while
 PPSA01652's matched V1; that difference is unexplained. Installed bytes do
 not establish that V2 executes or launches Payload Manager automatically.
+
+### V2 live result: automatic manager ready, independent status failed
+
+After a fresh PPSA01651 launch and Rest Mode cycle, the V2 stage log recorded
+arm ID `6ace4524b8022059`, AP-complete cleanup, `POSTWAKE_GATE`, and
+`POSTWAKE_PM_READY` for the same title and ID. A host request to port 8084
+returned HTTP 200 `/version` body `0.5.2` before manual manager launch.
+This is evidence of automatic Payload Manager start on that boot.
+
+The separate V3 status read matched the arm ID, base and root and reported
+AP complete with zero hook, but returned `ok=0 gate=0 ist=0`. It was saved
+locally as `PPSA0165x-postwake-v2-image/postwake-status-v3.txt`, SHA-256
+`5233d4aee438f9d20b659bdb127df63314a6dbea19de021ca7bae5563da35d8e`.
+The required independent safety gate therefore failed. The coordinator checks
+receipt and gate/IST before sending Payload Manager; it does not establish
+that these fields remain unchanged after Payload Manager or its own autoload
+starts. The cause of the later mismatch remains unproved. No rerun was made.
+The user observed that Payload Manager's own configured payloads launched on
+this wake and suggested that the shorter Rest Mode interval caused the later
+mismatch. The cause remains unverified. A fresh-boot, full-minute repeat is
+planned and must use a new arm ID.
+
+### Second V2 live attempt
+
+A fresh PPSA01651 run generated new arm ID `6ace45f68e139059`, base
+`ffffffff8ae40000` and root `000000000ec94000`. The V2 stage log again
+recorded AP completion, `POSTWAKE_GATE` and `POSTWAKE_PM_READY`; host
+`/version` returned `0.5.2` before manual launch. The independent V3 reader
+matched the new attempt but again returned `ok=0 gate=0 ist=0` (203 bytes,
+SHA-256 `d72f61b202b91fe663b25be34566c14a21a6334a21167dcce2f71d1e4d67b3a6`).
+The user confirmed this Rest Mode period was shorter than a minute and the
+home screen remained responsive. Both runs were short, so a duration effect
+has not been excluded.
+
+The manager's read-only `/log` endpoint showed sends for kstuff-fpkg,
+ShadowmountPlus, ProsperoMgr, ps5upload, klogsrv and ps5debug-NG after the
+manager started. This is a plausible source of subsequent gate/IST changes,
+not a demonstrated cause. The automatic launch capability passed twice; the
+post-chain invariant did not. The saved logs remain in the local
+`PPSA0165x-postwake-v2-rerun` directory. No third attempt was started.
+Read-only FTP saved the active manager autoload and config files. They select
+six ELFs and a five-second autoload delay. The manager's `/autoload_status`
+reported `total=6 done=6 current=DONE`; this is its own send counter, not
+independent execution completion. The files and hashes are under the private
+`PPSA0165x-postwake-v2-rerun` directory. A final fresh-boot, full-minute
+Rest Mode check is pending.
+
+### Full-minute control result
+
+A third fresh PPSA01651 attempt stayed at steady amber for at least one
+minute. Its new arm ID `6ace477b04d7a059`, base `ffffffffd7f10000` and
+root `000000001bd64000` matched the independent status. The V2 stage log
+again recorded AP completion, `POSTWAKE_GATE` and `POSTWAKE_PM_READY`;
+port 8084 answered `/version` with `0.5.2`. The independent V3 read still
+returned `ok=0 gate=0 ist=0` (203 bytes, SHA-256
+`9aa697a87bd6b71b2e4c1f4af49bcca2530cdc12446825b3e259b61666b0124c`).
+The home screen was responsive. Thus a full-minute interval did not resolve
+the post-chain discrepancy. Automatic manager readiness is demonstrated on
+three distinct attempts; the later gate/IST invariant remains failed.
+The next measurement needs to bracket manager autoload, without assuming
+which downstream payload changes the fields.
