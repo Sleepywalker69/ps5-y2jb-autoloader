@@ -1,21 +1,75 @@
-/* Post-wake, read-only Byepervisor status gate. No autoload side effects. */
+/* Draft attempt-specific Byepervisor receipt gate. No autoload side effects. */
 
-function parse_bpr_status_v1(output, expectedBoot) {
+function parse_bpr_arm_v1(output) {
+    if (typeof output !== 'string' || output.length > 4096) return null;
+    const lines = output.replace(/\r/g, '').split('\n');
+    const arms = lines.filter(line => line.startsWith('BPR_ARM_V1 '));
+    if (arms.length !== 1) return null;
+    const match = /^BPR_ARM_V1 id=([0-9a-f]{16})$/.exec(arms[0]);
+    if (!match || match[1] === '0000000000000000') return null;
+    return BigInt('0x' + match[1]);
+}
+
+function parse_bpr_arm_v2(output) {
+    if (typeof output !== 'string' || output.length > 4096) return null;
+    const lines = output.replace(/\r/g, '').split('\n');
+    const arms = lines.filter(line => line.startsWith('BPR_ARM_V2 '));
+    if (arms.length !== 1) return null;
+    const match = /^BPR_ARM_V2 id=([0-9a-f]{16}) base=(ffffffff[0-9a-f]{8}) root=([0-9a-f]{16})$/.exec(arms[0]);
+    if (!match || match[1] === '0000000000000000') return null;
+    const textBase = BigInt('0x' + match[2]);
+    const pmapRoot = BigInt('0x' + match[3]);
+    if ((textBase & 0xffffn) !== 0n || pmapRoot === 0n ||
+        (pmapRoot & 0xfffn) !== 0n || pmapRoot > 0x000fffffffffffffn)
+        return null;
+    return { armId: BigInt('0x' + match[1]), textBase, pmapRoot };
+}
+
+function parse_bpr_status_v2(output, expectedBoot, expectedArm) {
     if (typeof output !== 'string' || output.length > 4096 ||
         !expectedBoot || !Number.isSafeInteger(expectedBoot.sec) ||
         !Number.isSafeInteger(expectedBoot.usec) || expectedBoot.sec <= 0 ||
-        expectedBoot.usec < 0 || expectedBoot.usec >= 1000000) return null;
-    const match = /^BPR_STATUS_V1 ok=1 fw=([0-9a-f]{8}) boot=([0-9]{1,12})\.([0-9]{6}) base=([0-9a-f]{16}) stage=([0-9a-f]{16}) hook=([0-9a-f]{16}) gate=1 ist=1\r?\n$/.exec(output);
+        expectedBoot.usec < 0 || expectedBoot.usec >= 1000000 ||
+        typeof expectedArm !== 'bigint' || expectedArm <= 0n ||
+        expectedArm > 0xffffffffffffffffn) return null;
+    const match = /^BPR_STATUS_V2 ok=1 fw=([0-9a-f]{8}) boot=([0-9]{1,12})\.([0-9]{6}) base=([0-9a-f]{16}) stage=([0-9a-f]{16}) hook=([0-9a-f]{16}) arm=([0-9a-f]{16}) complete=([0-9a-f]{16}) gate=1 ist=1\r?\n$/.exec(output);
     if (!match || match[1] !== '13600007' ||
         match[5] !== '41505f434f4d504c' ||
         match[6] !== '0000000000000000' ||
+        BigInt('0x' + match[7]) !== expectedArm ||
+        match[7] !== match[8] ||
         Number(match[2]) !== expectedBoot.sec ||
         Number(match[3]) !== expectedBoot.usec ||
         !/^ffffffff[0-9a-f]{8}$/.test(match[4]) ||
         Number.parseInt(match[4].slice(8), 16) < 0x10000 ||
         (Number.parseInt(match[4].slice(8), 16) & 0xffff) !== 0) return null;
     return { bootSec: Number(match[2]), bootUsec: Number(match[3]),
-             textBase: BigInt('0x' + match[4]) };
+             textBase: BigInt('0x' + match[4]), armId: expectedArm };
+}
+
+function parse_bpr_status_v3(output, expected) {
+    if (typeof output !== 'string' || output.length > 4096 ||
+        !expected || typeof expected.armId !== 'bigint' ||
+        typeof expected.textBase !== 'bigint' ||
+        typeof expected.pmapRoot !== 'bigint' || expected.armId <= 0n ||
+        expected.armId > 0xffffffffffffffffn ||
+        (expected.textBase >> 32n) !== 0xffffffffn ||
+        (expected.textBase & 0xffffn) !== 0n ||
+        expected.pmapRoot === 0n || (expected.pmapRoot & 0xfffn) !== 0n ||
+        expected.pmapRoot > 0x000fffffffffffffn) return null;
+    const match = /^BPR_STATUS_V3 ok=1 fw=([0-9a-f]{8}) boot=([0-9]{1,12})\.([0-9]{6}) base=([0-9a-f]{16}) root=([0-9a-f]{16}) stage=([0-9a-f]{16}) hook=([0-9a-f]{16}) arm=([0-9a-f]{16}) complete=([0-9a-f]{16}) gate=1 ist=1\r?\n$/.exec(output);
+    if (!match || match[1] !== '13600007' ||
+        match[6] !== '41505f434f4d504c' ||
+        match[7] !== '0000000000000000' ||
+        BigInt('0x' + match[4]) !== expected.textBase ||
+        BigInt('0x' + match[5]) !== expected.pmapRoot ||
+        BigInt('0x' + match[8]) !== expected.armId ||
+        match[8] !== match[9] ||
+        !Number.isSafeInteger(Number(match[2])) || Number(match[2]) <= 0 ||
+        Number(match[3]) >= 1000000) return null;
+    return { bootSec: Number(match[2]), bootUsec: Number(match[3]),
+             textBase: expected.textBase, pmapRoot: expected.pmapRoot,
+             armId: expected.armId };
 }
 
 function bpr_current_boot() {
@@ -37,7 +91,7 @@ function bpr_syscall_failed(value) {
 }
 
 function bpr_status_elf_path() {
-    const name = 'stage_status_1360.elf';
+    const name = 'attempt_status_v3_1360.elf';
     for (const slot of ['000', '001', '002']) {
         const path = '/mnt/sandbox/' + TITLE_ID + '_' + slot +
             '/download0/cache/splash_screen/aHR0cHM6Ly93d3cueW91dHViZS5jb20vdHY=/' + name;
@@ -72,7 +126,7 @@ function bpr_read_elf(path) {
     return { bytes, size };
 }
 
-function bpr_query_elfldr_status(expectedBoot) {
+function bpr_query_elfldr_status(expectedArm) {
     const payload = bpr_read_elf(bpr_status_elf_path());
     const fd = syscall(SYSCALL.socket, AF_INET, SOCK_STREAM, 0n);
     if (bpr_syscall_failed(fd)) throw new Error('status socket failed');
@@ -114,7 +168,7 @@ function bpr_query_elfldr_status(expectedBoot) {
         }
         const reply = new TextDecoder().decode(new Uint8Array(collected));
         if (!reply.endsWith('\n')) throw new Error('status reply is truncated');
-        const status = parse_bpr_status_v1(reply, expectedBoot);
+        const status = parse_bpr_status_v3(reply, expectedArm);
         if (!status) throw new Error('post-wake AP status did not pass');
         return status;
     } finally {
@@ -123,5 +177,6 @@ function bpr_query_elfldr_status(expectedBoot) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { parse_bpr_status_v1 };
+    module.exports = { parse_bpr_arm_v1, parse_bpr_status_v2,
+                       parse_bpr_arm_v2, parse_bpr_status_v3 };
 }
