@@ -1245,7 +1245,7 @@ function trigger() {
         try {
             // Prove the record can be saved before launching an S3 payload.
             write_file(receiptPath, receiptText + 'preflight: ready\n');
-            const arm = bpr_launch_v3_attempt();
+            const arm = await bpr_launch_v3_attempt();
             receiptText += 'arm: ' + arm.armId.toString(16).padStart(16, '0') +
                 ' base=' + arm.textBase.toString(16).padStart(16, '0') +
                 ' root=' + arm.pmapRoot.toString(16).padStart(16, '0') + '\n';
@@ -1257,7 +1257,7 @@ function trigger() {
             await new Promise(resolve => setTimeout(resolve, 12000));
             receiptText += 'post-wake JS: resumed\n';
             write_file(receiptPath, receiptText);
-            const status = bpr_query_elfldr_status(arm);
+            const status = await bpr_query_elfldr_status(arm);
             receiptText += 'status: passed boot=' + status.bootSec + '.' +
                 String(status.bootUsec).padStart(6, '0') + '\n';
             write_file(receiptPath, receiptText);

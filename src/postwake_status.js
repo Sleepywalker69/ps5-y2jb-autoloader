@@ -125,24 +125,47 @@ function bpr_read_elf(path) {
     return { bytes, size };
 }
 
-function bpr_query_elfldr_status(expectedArm) {
+async function bpr_connect_elfldr(label, timeoutSeconds) {
+    // Relapse hands off before its new elfldr thread necessarily accepts a
+    // connection. Each attempt gets a fresh socket, as in autoload.js.
+    let lastConnect = null;
+    for (let attempt = 1; attempt <= 50; attempt++) {
+        const fd = syscall(SYSCALL.socket, AF_INET, SOCK_STREAM, 0n);
+        if (bpr_syscall_failed(fd))
+            throw new Error(label + ' socket failed');
+        let connected = false;
+        try {
+            const timeout = malloc(16n);
+            write64(timeout, BigInt(timeoutSeconds));
+            write64(timeout + 8n, 0n);
+            if (syscall(SYSCALL.setsockopt, fd, SOL_SOCKET, 0x1006n,
+                        timeout, 16n) !== 0n)
+                throw new Error(label + ' socket timeout failed');
+            const address = malloc(16n);
+            write8(address, 16n);
+            write8(address + 1n, AF_INET);
+            write16(address + 2n, 0x3d23n); // 127.0.0.1:9021
+            write32(address + 4n, 0x0100007fn);
+            lastConnect = syscall(SYSCALL.connect, fd, address, 16n);
+            if (lastConnect === 0n) {
+                connected = true;
+                return { fd, attempt };
+            }
+        } finally {
+            if (!connected) syscall(SYSCALL.close, fd);
+        }
+        if (attempt < 50)
+            await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    throw new Error(label + ' elfldr unavailable after 50 checks; last connect=' +
+                    (lastConnect === null ? 'none' : '0x' +
+                     BigInt.asUintN(64, lastConnect).toString(16)));
+}
+
+async function bpr_query_elfldr_status(expectedArm) {
     const payload = bpr_read_elf(bpr_elf_path('attempt_status_v3_1360.elf'));
-    const fd = syscall(SYSCALL.socket, AF_INET, SOCK_STREAM, 0n);
-    if (bpr_syscall_failed(fd)) throw new Error('status socket failed');
+    const { fd } = await bpr_connect_elfldr('status', 3);
     try {
-        const timeout = malloc(16n);
-        write64(timeout, 3n);
-        write64(timeout + 8n, 0n);
-        if (syscall(SYSCALL.setsockopt, fd, SOL_SOCKET, 0x1006n,
-                    timeout, 16n) !== 0n)
-            throw new Error('status socket timeout failed');
-        const address = malloc(16n);
-        write8(address, 16n);
-        write8(address + 1n, AF_INET);
-        write16(address + 2n, 0x3d23n); // 127.0.0.1:9021
-        write32(address + 4n, 0x0100007fn);
-        if (syscall(SYSCALL.connect, fd, address, 16n) !== 0n)
-            throw new Error('elfldr is unavailable after wake');
         let sent = 0n;
         while (sent < payload.size) {
             const n = syscall(SYSCALL.write, fd, payload.bytes + sent,
@@ -175,26 +198,12 @@ function bpr_query_elfldr_status(expectedArm) {
     }
 }
 
-function bpr_launch_v3_attempt() {
+async function bpr_launch_v3_attempt() {
     const payload = bpr_read_elf(bpr_elf_path('byepervisor_reborn_attempt_receipt_v3_1360.elf'));
     if (payload.size !== 182784n)
         throw new Error('unexpected V3 hook ELF length');
-    const fd = syscall(SYSCALL.socket, AF_INET, SOCK_STREAM, 0n);
-    if (bpr_syscall_failed(fd)) throw new Error('hook socket failed');
+    const { fd } = await bpr_connect_elfldr('hook', 5);
     try {
-        const timeout = malloc(16n);
-        write64(timeout, 5n);
-        write64(timeout + 8n, 0n);
-        if (syscall(SYSCALL.setsockopt, fd, SOL_SOCKET, 0x1006n,
-                    timeout, 16n) !== 0n)
-            throw new Error('hook socket timeout failed');
-        const address = malloc(16n);
-        write8(address, 16n);
-        write8(address + 1n, AF_INET);
-        write16(address + 2n, 0x3d23n); // 127.0.0.1:9021
-        write32(address + 4n, 0x0100007fn);
-        if (syscall(SYSCALL.connect, fd, address, 16n) !== 0n)
-            throw new Error('elfldr is unavailable for V3 hook');
         let sent = 0n;
         while (sent < payload.size) {
             const n = syscall(SYSCALL.write, fd, payload.bytes + sent,

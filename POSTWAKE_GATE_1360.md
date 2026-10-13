@@ -20,7 +20,8 @@ exercised from YouTube. No later payload chain is enabled.
 The standalone receipt passed on one boot. The next gate is to observe whether
 the YouTube process and elfldr survive the Rest Mode cycle when YouTube sends
 the hook itself. A failed or missing receipt leaves later payloads disabled.
-The current installed package on the console is not changed by this branch.
+Both regional packages were subsequently replaced with the verified UFS2
+image; their previous `download0.dat` files remain as local console backups.
 
 ## V2 live finding and V3 candidate
 
@@ -56,11 +57,38 @@ for the status reader. `make all BUILD_TYPE=dev` produced `y2jb_update.zip`;
 the archive passed its CRC check, includes both exact ELFs, and contains no
 kernel dump, synthetic ELF, or IDA database. The current local ZIP SHA-256 is
 `5a14039ce64ca55ed0a5e7cfdd850f2efa228eb4da31dbb53b3d1b6144cf90ca9`.
-No `download0.dat` has yet been generated from this ZIP, and neither title has
-been modified with this candidate.
+The artifact-only workflow generated a UFS2 `download0.dat` from this branch.
+The current live image and title results are recorded below.
 
 The feature branch's existing `.github/workflows/dev.yml` dispatch path now
 builds an artifact-only UFS2 image with no release step. GitHub did not accept
 dispatch of a new workflow file that was absent from the fork's default branch
 (`HTTP 404: workflow receipt-test.yml not found on the default branch`), so
 the existing workflow ID is used for this branch build instead.
+
+## UFS2 image and console install
+
+GitHub Actions run `38407230658` passed its ZIP checks and FreeBSD UFS2 build.
+The downloaded `download0.dat` is 336,789,504 bytes; local SHA-256 and the
+workflow manifest both report
+`9dd53c4cf25c465a8d9b2f522c10055a2c187dbe4f4e51a002f6623f382a024f`.
+With the user's authorization, the same image was uploaded to both
+`/user/download/PPSA01651/download0.dat` and
+`/user/download/PPSA01652/download0.dat` through zftpd port 2120. Each staging
+copy and each promoted file passed a full SHA-256 readback. The previous image
+in each title is retained as `download0.dat.pre-v3-20261013`. The new image
+was launched once from PPSA01652. The visible Relapse trace reached clean
+handoff, but the V3 sender's immediate local connection to elfldr failed
+before any arm ID, payload send, or Rest Mode request. A host connection to
+port 9021 failed just afterward and succeeded later. This suggests loader
+readiness timing, without proving the console-local socket's state. The
+current sender now waits for up to 50 fresh local connection attempts spaced
+200 ms apart, logs the final connect result on failure, and still sends no
+configured later payloads. Offline transport tests cover delayed readiness
+and timeout. The revised ZIP passed CRC, JS syntax, 48 parser cases, five
+transport cases, and both embedded ELF SHA-256 checks; ZIP SHA-256 is
+`5318ee9c9836a87f5ec3a707b32d39414a1264e61903a632f99f44b2c399e040`.
+This revised UFS2 image is not yet built or run. The screenshot identifies
+PPSA01652; a later FTP listing showed only a PPSA01651 failure log, so that
+saved file cannot be attributed to the photographed launch. YouTube survival,
+post-wake JS continuation, and native autoload remain unproved.
