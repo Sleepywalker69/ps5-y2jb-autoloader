@@ -306,3 +306,26 @@ same ID, and has no `POSTWAKE_PM_READY` entry. This is live evidence that the
 new configuration took the manual branch after one wake. It does not provide
 an independent post-wake gate/IST measurement or prove that no unrelated
 payload was launched by another process.
+
+### Independent manual-mode V3 receipt
+
+With the same arm file and stage-log hashes still present, elfldr port 9021
+open, and Payload Manager port 8084 closed, one pinned read-only V3 status
+ELF was sent. Its length was 111,024 bytes and SHA-256 was
+`3b17d7e24c44b2341e3a65b133f74f052d95540ba453becd58378aaa2f35e4a5`.
+The complete 203-byte output is saved privately as
+`PPSA0165x-postwake-manual-image/manual-status-v3-20261013.txt`, SHA-256
+`be1e2793f9a5c501fc9934d5d23082efaf1d4abbe28e382cba25a7782d81fba0`:
+
+```text
+BPR_STATUS_V3 ok=1 fw=13600007 boot=1791904675.805577 base=ffffffff91560000 root=00000000153b4000 stage=41505f434f4d504c hook=0000000000000000 arm=6ace4bc8e2029059 complete=6ace4bc8e2029059 gate=1 ist=1
+```
+
+The arm ID, text base and pmap root agree with the pre-Rest PPSA01651 file;
+the reported boot precedes that session's start timestamp. The independent
+reader therefore confirms AP-complete stage, matching completion ID, zero
+hook state and restored gate/IST at the time of this read. The host-side
+reader script is private (`check_manual_status.py`, SHA-256
+`e7e93eeea940067603c6bffc3514992397c10dac56785a795eddd364b80023fa`).
+No downstream ELF was launched by this check. Console responsiveness after
+the read is being confirmed separately with the user.
