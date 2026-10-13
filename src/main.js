@@ -1228,14 +1228,25 @@ function trigger() {
             return;
         }
 
-        await start_update();
-        await start_icon_update();
-        await sleep(1000);
-        await start_autoload();
-
-        if (typeof window.updateProgress === 'function') {
-            window.updateProgress(100, "Autoload finished.");
+        // PPSA01652 isolation build: keep Relapse and its elfldr handoff,
+        // but do not start the updater, icon step, or native autoloader.
+        // In particular, no configured payloads or Payload Manager are sent.
+        const relapseState = (typeof globalThis.relapse_status === 'function')
+            ? globalThis.relapse_status() : null;
+        if (!relapseState || !relapseState.handedOff ||
+            !relapseState.disarmed || relapseState.crossed) {
+            await log('[ERROR] Relapse-only: clean handoff was not verified. ' +
+                'Do not close YouTube or send the HV ELF.');
+            send_notification('Relapse-only: handoff not verified\nSee Y2JB log');
+            return;
         }
+
+        await log('[+] Relapse-only: elfldr handoff complete; no payloads autoloaded.');
+        send_notification('Relapse-only test\nELF loader ready\nNo payloads autoloaded');
+        if (typeof window.updateProgress === 'function') {
+            window.updateProgress(100, "Relapse-only ready. No payloads autoloaded.");
+        }
+        return;
 
     } catch (e) {                
         if (typeof window.hideUI === 'function') window.hideUI();
