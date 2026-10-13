@@ -88,7 +88,13 @@ configured later payloads. Offline transport tests cover delayed readiness
 and timeout. The revised ZIP passed CRC, JS syntax, 48 parser cases, five
 transport cases, and both embedded ELF SHA-256 checks; ZIP SHA-256 is
 `5318ee9c9836a87f5ec3a707b32d39414a1264e61903a632f99f44b2c399e040`.
-This revised UFS2 image is not yet built or run. The screenshot identifies
+The artifact-only workflow run `38409696985` passed and built a clean UFS2
+image of 336,789,504 bytes, SHA-256
+`b2914ebcb41fbc0d507d63b9db5383d7da131446f7163b67de030e4ebaa66f8d`.
+After YouTube was closed, the same image was installed in both regional titles;
+the staging and final readback hashes matched for each, and prior files were
+retained as `download0.dat.pre-v3wait-20261013`. The revised image has not
+yet run. The screenshot identifies
 PPSA01652; a later FTP listing showed only a PPSA01651 failure log, so that
 saved file cannot be attributed to the photographed launch. YouTube survival,
 post-wake JS continuation, and native autoload remain unproved.
