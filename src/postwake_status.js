@@ -90,8 +90,7 @@ function bpr_syscall_failed(value) {
     return value > 0x7fffffffffffffffn;
 }
 
-function bpr_status_elf_path() {
-    const name = 'attempt_status_v3_1360.elf';
+function bpr_elf_path(name) {
     for (const slot of ['000', '001', '002']) {
         const path = '/mnt/sandbox/' + TITLE_ID + '_' + slot +
             '/download0/cache/splash_screen/aHR0cHM6Ly93d3cueW91dHViZS5jb20vdHY=/' + name;
@@ -99,7 +98,7 @@ function bpr_status_elf_path() {
         if (syscall(SYSCALL.stat, alloc_string(path), stat) === 0n)
             return path;
     }
-    throw new Error('post-wake status ELF is missing from this title');
+    throw new Error(name + ' is missing from this title');
 }
 
 function bpr_read_elf(path) {
@@ -127,7 +126,7 @@ function bpr_read_elf(path) {
 }
 
 function bpr_query_elfldr_status(expectedArm) {
-    const payload = bpr_read_elf(bpr_status_elf_path());
+    const payload = bpr_read_elf(bpr_elf_path('attempt_status_v3_1360.elf'));
     const fd = syscall(SYSCALL.socket, AF_INET, SOCK_STREAM, 0n);
     if (bpr_syscall_failed(fd)) throw new Error('status socket failed');
     try {
@@ -171,6 +170,55 @@ function bpr_query_elfldr_status(expectedArm) {
         const status = parse_bpr_status_v3(reply, expectedArm);
         if (!status) throw new Error('post-wake AP status did not pass');
         return status;
+    } finally {
+        syscall(SYSCALL.close, fd);
+    }
+}
+
+function bpr_launch_v3_attempt() {
+    const payload = bpr_read_elf(bpr_elf_path('byepervisor_reborn_attempt_receipt_v3_1360.elf'));
+    if (payload.size !== 182784n)
+        throw new Error('unexpected V3 hook ELF length');
+    const fd = syscall(SYSCALL.socket, AF_INET, SOCK_STREAM, 0n);
+    if (bpr_syscall_failed(fd)) throw new Error('hook socket failed');
+    try {
+        const timeout = malloc(16n);
+        write64(timeout, 5n);
+        write64(timeout + 8n, 0n);
+        if (syscall(SYSCALL.setsockopt, fd, SOL_SOCKET, 0x1006n,
+                    timeout, 16n) !== 0n)
+            throw new Error('hook socket timeout failed');
+        const address = malloc(16n);
+        write8(address, 16n);
+        write8(address + 1n, AF_INET);
+        write16(address + 2n, 0x3d23n); // 127.0.0.1:9021
+        write32(address + 4n, 0x0100007fn);
+        if (syscall(SYSCALL.connect, fd, address, 16n) !== 0n)
+            throw new Error('elfldr is unavailable for V3 hook');
+        let sent = 0n;
+        while (sent < payload.size) {
+            const n = syscall(SYSCALL.write, fd, payload.bytes + sent,
+                              payload.size - sent);
+            if (n <= 0n || n > payload.size - sent || bpr_syscall_failed(n))
+                throw new Error('V3 hook ELF send was incomplete');
+            sent += n;
+        }
+        if (syscall(134n, fd, 1n) !== 0n) // shutdown(SHUT_WR)
+            throw new Error('hook socket shutdown failed');
+        const buffer = malloc(512n);
+        let output = '';
+        for (;;) {
+            const n = syscall(SYSCALL.read, fd, buffer, 512n);
+            if (bpr_syscall_failed(n))
+                throw new Error('V3 arm line timed out or failed');
+            if (n === 0n) throw new Error('V3 hook ended without arm line');
+            if (n > 512n || output.length + Number(n) > 4096)
+                throw new Error('V3 hook output is too large');
+            output += new TextDecoder().decode(
+                new Uint8Array(read_buffer(buffer, n)));
+            const arm = parse_bpr_arm_v2(output);
+            if (arm) return arm;
+        }
     } finally {
         syscall(SYSCALL.close, fd);
     }

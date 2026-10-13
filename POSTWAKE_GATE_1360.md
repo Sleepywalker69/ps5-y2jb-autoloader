@@ -1,9 +1,11 @@
 # Post-wake status gate draft
 
-`src/postwake_status.js` is an offline-tested parser and draft reader for the
-separate `attempt_status_v3_1360.elf` candidate in the Byepervisor-Reborn fork.
-It is not loaded by `main.js`; the current entry point still exits after the
-Relapse/elfldr handoff and sends no later payloads.
+`src/postwake_status.js` contains the V3 arm and status transport for the
+isolated Y2JB receipt test. `main.js` now loads it after the Relapse/elfldr
+handoff. It sends the tested V3 hook ELF, saves the returned arm line to
+`/user/temp/common_temp/bpr-y2jb-<TITLE_ID>.log`, waits through Rest Mode,
+then asks elfldr for an independent V3 status. It does not start the native
+autoloader or any configured later payload in this test build.
 
 The current arm parser accepts one `BPR_ARM_V2` line containing the attempt ID,
 kernel text base, and kernel pmap root. The V3 status parser requires the same
@@ -11,14 +13,14 @@ three values after wake, firmware 13.60, AP-complete marker, zero hook state,
 matching arm/completion ID, and restored gate/IST. `kern.boottime` is reported
 for diagnosis but is not an equality gate: it shifted in the first live V2
 Rest Mode cycle. Run `node tests/postwake_status.test.js` for 23 V2 and 25 V3
-parser cases. The transport helper and V3 exchange have not been exercised
-from YouTube. The current branch does not build, upload, or enable an autoload
-chain.
+parser cases. Four mock-socket transport cases cover split arm output, missing
+arm, failed connection, and invalid zero ID. The V3 exchange has not been
+exercised from YouTube. No later payload chain is enabled.
 
-Before wiring the reader into `main.js`, verify the new receipt on a controlled
-console attempt and observe whether the YouTube process and elfldr survive the
-Rest Mode cycle. A failed or missing receipt must leave later payloads
-disabled. The current package on the console is not changed by this branch.
+The standalone receipt passed on one boot. The next gate is to observe whether
+the YouTube process and elfldr survive the Rest Mode cycle when YouTube sends
+the hook itself. A failed or missing receipt leaves later payloads disabled.
+The current installed package on the console is not changed by this branch.
 
 ## V2 live finding and V3 candidate
 
@@ -28,5 +30,31 @@ The strict V2 parser therefore rejected it and no later payload ran. V3
 compares the arm ID plus kernel text base and pmap root from before Rest Mode
 against an independent post-wake status. `kern.boottime` remains in the output
 for diagnostics. The Node suite now passes 23 V2 and 25 V3 parser cases,
-including stale, missing, mismatched, and failed states. This V3 path has not
-been run from YouTube or integrated with `main.js`.
+including stale, missing, mismatched, and failed states. The V3 path is now
+integrated in `main.js` for a **receipt-only** survival test, but has not been
+run from YouTube.
+
+## Controlled V3 receipt result
+
+One standalone Relapse/elfldr attempt on firmware 13.60 produced
+`BPR_ARM_V2 id=6ace3357104ff054 base=ffffffff998a0000
+root=000000001d6f4000` before Rest Mode. The independent post-wake
+`BPR_STATUS_V3` returned the same values, AP complete, zero hook, matching
+completion ID, and restored gate/IST. The home screen remained responsive.
+The helper `node tests/check_live_receipt.js ATTEMPT.log ATTEMPT.json STATUS.log`
+accepted those saved local records. `kern.boottime` changed across S3 and is
+informational. The raw logs remain outside Git. This establishes one passing
+receipt but does not prove YouTube or the JS transport survives Rest Mode.
+
+## Receipt-only Y2JB package, offline gate
+
+The two copied ELF files match the standalone-tested SHA-256 values:
+`4e303c1a5d409013637bded728602103ab39f4948d3f5888d7e9a5d98c0ab810`
+for the hook and
+`3b17d7e24c44b2341e3a65b133f74f052d95540ba453becd58378aaa2f35e4a5`
+for the status reader. `make all BUILD_TYPE=dev` produced `y2jb_update.zip`;
+the archive passed its CRC check, includes both exact ELFs, and contains no
+kernel dump, synthetic ELF, or IDA database. The current local ZIP SHA-256 is
+`5a14039ce64ca55ed0a5e7cfdd850f2efa228eb4da31dbb53b3d1b6144cf90ca9`.
+No `download0.dat` has yet been generated from this ZIP, and neither title has
+been modified with this candidate.

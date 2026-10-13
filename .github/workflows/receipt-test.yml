@@ -1,0 +1,71 @@
+name: 13.60 Receipt Test Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Verify source and build update ZIP
+        run: |
+          node tests/postwake_status.test.js
+          node tests/postwake_transport.test.js
+          node --check src/main.js
+          node --check src/postwake_status.js
+          ./build.sh --dev --download-deps
+          python3 - <<'PY'
+          import hashlib, zipfile
+          expected = {
+              'byepervisor_reborn_attempt_receipt_v3_1360.elf': '4e303c1a5d409013637bded728602103ab39f4948d3f5888d7e9a5d98c0ab810',
+              'attempt_status_v3_1360.elf': '3b17d7e24c44b2341e3a65b133f74f052d95540ba453becd58378aaa2f35e4a5',
+          }
+          with zipfile.ZipFile('y2jb_update.zip') as archive:
+              assert archive.testzip() is None
+              for name, digest in expected.items():
+                  actual = hashlib.sha256(archive.read(name)).hexdigest()
+                  assert actual == digest, (name, actual)
+                  print(name, actual)
+              assert not any('kernel-dump' in n or n.endswith('.i64') or
+                             n.endswith('.synthetic.elf') for n in archive.namelist())
+          PY
+      - name: Populate download0 directory
+        run: |
+          mkdir -p download0/cache/splash_screen/aHR0cHM6Ly93d3cueW91dHViZS5jb20vdHY=
+          unzip -q y2jb_update.zip -d download0/cache/splash_screen/aHR0cHM6Ly93d3cueW91dHViZS5jb20vdHY=
+          rm download0/cache/splash_screen/aHR0cHM6Ly93d3cueW91dHViZS5jb20vdHY=/update-info.txt
+      - name: Create UFS2 download0.dat
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: '14.2'
+          copyback: true
+          run: |
+            set -e
+            truncate -s 336789504 download0.dat
+            MD=$(mdconfig -a -t vnode -f "$(pwd)/download0.dat")
+            newfs -O 2 -b 32768 -f 4096 /dev/${MD}
+            mount /dev/${MD} /mnt
+            cp -R download0/* /mnt/
+            chmod -R 777 /mnt/*
+            umount /mnt
+            mdconfig -d -u ${MD}
+      - name: Record image hash
+        run: |
+          sha256sum download0.dat > download0.dat.sha256
+          cat download0.dat.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: y2jb-1360-v3-receipt-test
+          path: |
+            download0.dat
+            download0.dat.sha256
+          retention-days: 7

@@ -1189,6 +1189,7 @@ function trigger() {
         await load_localscript('update.js');
         await load_localscript('icon_update.js');
         await load_localscript('autoload.js');
+        await load_localscript('postwake_status.js');
         if (typeof window.updateProgress === 'function') {
             window.updateProgress(20, "Running kernel exploit...");
         }
@@ -1228,9 +1229,7 @@ function trigger() {
             return;
         }
 
-        // PPSA01652 isolation build: keep Relapse and its elfldr handoff,
-        // but do not start the updater, icon step, or native autoloader.
-        // In particular, no configured payloads or Payload Manager are sent.
+        // Isolated V3 receipt test: no configured payloads or Payload Manager.
         const relapseState = (typeof globalThis.relapse_status === 'function')
             ? globalThis.relapse_status() : null;
         if (!relapseState || !relapseState.handedOff ||
@@ -1241,10 +1240,37 @@ function trigger() {
             return;
         }
 
-        await log('[+] Relapse-only: elfldr handoff complete; no payloads autoloaded.');
-        send_notification('Relapse-only test\nELF loader ready\nNo payloads autoloaded');
-        if (typeof window.updateProgress === 'function') {
-            window.updateProgress(100, "Relapse-only ready. No payloads autoloaded.");
+        const receiptPath = '/user/temp/common_temp/bpr-y2jb-' + TITLE_ID + '.log';
+        let receiptText = 'BPR Y2JB V3 receipt test\nTitle: ' + TITLE_ID + '\n';
+        try {
+            // Prove the record can be saved before launching an S3 payload.
+            write_file(receiptPath, receiptText + 'preflight: ready\n');
+            const arm = bpr_launch_v3_attempt();
+            receiptText += 'arm: ' + arm.armId.toString(16).padStart(16, '0') +
+                ' base=' + arm.textBase.toString(16).padStart(16, '0') +
+                ' root=' + arm.pmapRoot.toString(16).padStart(16, '0') + '\n';
+            write_file(receiptPath, receiptText);
+            send_notification('Byepervisor armed\nEnter Rest Mode automatically');
+
+            // Rest is requested three seconds after arm. A surviving YouTube
+            // process resumes this timer after wake; failure stays isolated.
+            await new Promise(resolve => setTimeout(resolve, 12000));
+            receiptText += 'post-wake JS: resumed\n';
+            write_file(receiptPath, receiptText);
+            const status = bpr_query_elfldr_status(arm);
+            receiptText += 'status: passed boot=' + status.bootSec + '.' +
+                String(status.bootUsec).padStart(6, '0') + '\n';
+            write_file(receiptPath, receiptText);
+            send_notification('Byepervisor V3 receipt passed\nNo later payloads sent');
+            if (typeof window.updateProgress === 'function') {
+                window.updateProgress(100, 'Post-wake receipt passed. No later payloads sent.');
+            }
+        } catch (error) {
+            receiptText += 'stopped: ' + ((error && error.message) || String(error)) + '\n';
+            try { write_file(receiptPath, receiptText); } catch (_) { }
+            send_notification('Byepervisor receipt stopped\nSee bpr-y2jb log');
+            await log('[ERROR] V3 receipt stopped: ' +
+                ((error && error.message) || String(error)));
         }
         return;
 
