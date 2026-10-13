@@ -267,3 +267,11 @@ contains no private kernel dump, synthetic ELF or IDA database. Windows
 Clang could not compile the native parser test because it reported no Visual
 Studio installation; the same test compiled and ran successfully with WSL
 `cc -std=c11 -Wall -Wextra -Werror`. This is an offline/package result only.
+GitHub Actions run `38419602775` passed for Y2JB commit `d58a027` and produced
+the manual-mode 336,789,504-byte UFS2 image. The workflow manifest and
+independent local SHA-256 both equal
+`ff1ec8eea341fc282416ba07047e51a6d0e074019c8ef10bf6b4ccea777725c0`.
+The image is saved privately under `PPSA0165x-postwake-manual-image` with a
+staged, backup-preserving deploy script for both regional titles. It has not
+been uploaded because the PS5 was last reported frozen. The old automatic
+manager image remains installed until a complete upload/readback succeeds.
