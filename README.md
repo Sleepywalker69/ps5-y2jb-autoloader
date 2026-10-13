@@ -17,6 +17,12 @@ version 0.5.2 before recording <code>POSTWAKE_PM_READY</code>. This branch
 has not been tested on PS5 and does not prove that Payload Manager's later
 autoloaded ELFs completed. It is separate from the manual-mode default and
 the receipt-marker test.
+After the failed marker attempt, both installed YouTube titles were restored
+to the verified manual-mode image (SHA-256
+<code>ff1ec8eea341fc282416ba07047e51a6d0e074019c8ef10bf6b4ccea777725c0</code>).
+The restored image has not been launched on that boot. Recovery logs did not
+identify a fault in the marker or AP path. This optional Payload Manager
+branch is still not installed.
 The general autoloader instructions below describe upstream mode.</p>
 &nbsp;
 <p align="center">Automatically loads the kernel exploit and your elf payloads.<br>Supports PS5 firmwares 4.03-13.60</p>
