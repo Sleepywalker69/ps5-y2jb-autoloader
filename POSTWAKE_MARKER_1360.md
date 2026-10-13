@@ -19,9 +19,9 @@ only transmission. The marker writes its per-attempt file after its own
 receipt check. The recovered failure log ends before cleanup logging
 resumes, so it cannot show which of these later steps ran.
 
-The next controlled comparison is a fresh manual-mode wake with an
-independently matched AP receipt, followed by one separate marker send while
-an operator watches the PS5. This plan has not run.
+The controlled comparison was a fresh manual-mode wake with an independently
+matched AP receipt, followed by one separate marker send while an operator
+watched the PS5. Its result is recorded below.
 
 This branch packages `postwake.txt` as
 `elf=postwake_receipt_marker_1360.elf`. The native coordinator sends that
@@ -44,7 +44,7 @@ recompiled marker ELF is 110,936 bytes, SHA-256
 
 The marker does not start Payload Manager or other ELFs. It does not change
 kernel or A53 state. This branch is a controlled test image; live execution
-has not been verified.
+from the configured post-wake path has not been verified.
 
 ## First live attempt and evidence limit
 
@@ -78,15 +78,13 @@ restored image has not run on this boot. The user is unavailable to observe
 a live test now, so no new YouTube launch, ELF send or Rest Mode cycle
 followed.
 
-The next comparison should run one manual-mode wake on a fresh boot with
-an operator watching. Require one current title arm, independent V3
+The next comparison required one current title arm, independent V3
 AP-complete receipt with zero hook and restored gate/IST, and a matching
-`POSTWAKE_MANUAL` event. Only after that passes should the same pinned marker
-ELF be sent separately through elfldr once, requiring its exact per-attempt
-file and a second matching receipt. The private control parser has five
-passing offline failure-path tests; it has not run on PS5. Do not redeploy
-the configured marker image or advance to Payload Manager based on this
-offline control.
+`POSTWAKE_MANUAL` event. Only after that passed was the same pinned marker
+ELF sent separately through elfldr once, requiring its exact per-attempt
+file and a second matching receipt. The private control passed seven offline
+success/failure cases before that live run. Do not advance to Payload Manager
+from this result alone.
 
 ## Historical planned acceptance gate (not passed)
 
@@ -105,3 +103,26 @@ offline control.
 This gate was not reached in the first live attempt. The procedure above is
 retained as the intended acceptance criteria, not as an instruction to rerun
 the failed image without fault isolation.
+
+## Manual wake and separate marker control (13 October 2026)
+
+A subsequent run of the restored manual-mode image on PPSA01651 produced
+exactly one title arm file and a latest-session `POSTWAKE_MANUAL` event with
+the same arm ID. An independent V3 status ELF reported AP complete, matching
+arm/completion IDs, zero hook state, and restored gate/IST. The status
+`kern.boottime` was about nine seconds later than the stage log's session
+wall-clock time. As earlier 13.60 Rest Mode cycles had also shifted
+`kern.boottime`, the verifier retained that difference as evidence and used
+the exact arm ID, title, kernel base/root and latest session for attempt
+identity.
+
+With the PS5 responsive and the operator watching, the pinned marker ELF was
+sent once through elfldr. A 224-byte per-attempt marker file appeared and
+matched the independent status on title, boot, arm/completion IDs,
+base/root, AP stage, hook, gate and IST. A second status read was
+byte-identical. The operator confirmed the home screen remained responsive.
+This proves marker execution after a verified **manual** wake and an external
+send. It does not prove that the configured post-wake coordinator sends the
+ELF or survives the same wake transition. The earlier power-off remains
+unattributed. The marker UFS2 image has not been redeployed for another
+configured test.
