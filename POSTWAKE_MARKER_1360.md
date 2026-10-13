@@ -1,5 +1,13 @@
 # 13.60 configured ELF execution check
 
+**Live test status (13 October 2026): failed; do not treat this image as a
+working post-wake payload chain.** A PS5 on FW 13.60 powered off after the
+first Rest Mode/wake cycle with this image installed. The user described a
+kernel panic after wake. No post-wake arm ID, marker file, stage log, or
+independent receipt was retrieved from that cycle, so the failing component
+is not identified. Do not automatically advance from this test to the
+Payload Manager variant.
+
 This branch packages `postwake.txt` as
 `elf=postwake_receipt_marker_1360.elf`. The native coordinator sends that
 one ELF only after its current-attempt AP-complete, hook-zero and restored
@@ -21,10 +29,34 @@ recompiled marker ELF is 110,936 bytes, SHA-256
 
 The marker does not start Payload Manager or other ELFs. It does not change
 kernel or A53 state. This branch is a controlled test image; live execution
-has not yet been verified. The installed manual-mode image is unchanged until
-this branch's UFS2 image is explicitly deployed.
+has not been verified.
 
-## Controlled run
+## First live attempt and evidence limit
+
+- The CI-built `download0.dat` was 336,789,504 bytes, SHA-256
+  `bc50e6b179d03b30fa97cbd45a8d9744a96f0002d78ddeb2d1a40a0603b2ca66`.
+  Both YouTube title copies were staged, read back, promoted, and read back
+  again at that hash. Previous images were retained as backups.
+- A fresh-boot read-only gate before replacement confirmed a different boot
+  from the prior stalled session, FTP command response, and a 4,096-byte
+  first read from each current and backup title image. One current title
+  had a different, readable prior image; its content identity was not
+  established. This gate is evidence about file I/O, not S3 success.
+- The user rebooted and ran one of the identical YouTube icons. The host
+  made no console request during the Rest Mode/wake cycle. After waking,
+  the user reported a kernel panic and then a powered-off console. The
+  exact title, arm ID, AP result, marker execution, and fault location
+  remain unknown because no post-wake records were collected.
+- Relative to the manual branch, this branch selects the diagnostic ELF in
+  `postwake.txt` and packages that ELF. The timing makes the added path a
+  candidate cause; it does not prove which instruction or component failed.
+  No marker success claim or later-payload launch claim follows from this run.
+
+The console test is paused. A future investigation should preserve recovery
+logs first, audit the manual-to-marker delta offline, and use a separate
+observable control before another configured ELF launch.
+
+## Historical planned acceptance gate (not passed)
 
 1. Reboot the PS5 and make sure Payload Manager and other autoload chains are
    absent. Start PPSA01651 YouTube once.
@@ -38,5 +70,6 @@ this branch's UFS2 image is explicitly deployed.
    boot time must match the marker's boot time. Stop on any missing or
    mismatched field.
 
-After the test, restore the manual-mode image if no optional post-wake ELF is
-desired.
+This gate was not reached in the first live attempt. The procedure above is
+retained as the intended acceptance criteria, not as an instruction to rerun
+the failed image without fault isolation.
