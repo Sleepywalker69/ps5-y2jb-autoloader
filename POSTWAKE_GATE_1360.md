@@ -134,4 +134,25 @@ fully read back, promoted and fully read back each title image. Both PPSA01651
 and PPSA01652 matched the new image hash above. Prior copies remain as
 `download0.dat.pre-postwake-20261013`. The 1,197-byte local deployment report
 has SHA-256 `30af26db8a2fc2386e0ce0dcb220da5920fdb4bb5e1bd87ad6ae4e930e64b82c`.
-No new-image live launch has occurred yet.
+The image had not been launched at this deployment gate.
+
+### First automatic Payload Manager attempt
+
+PPSA01651's pre-Rest arm file recorded ID `6ace41b51d84a059`, text base
+`ffffffff8bc80000` and pmap root `000000000fad4000`. An independent
+post-wake V3 status matched all three, showed AP-complete, zero hook and
+restored gate/IST. Before the user launched Payload Manager manually, port
+8084 refused connections and the stage log had no post-wake entry for this
+attempt. The manual launch later answered `/version` with body `0.5.2` and is
+not counted as automatic success. FTP readback of the mounted title confirmed
+the new config, JS and ELF hashes. The specific post-wake stopping point is
+unproved.
+
+The V2 candidate addresses two plausible post-wake hazards: SIGPIPE on the
+closed pre-Rest log socket and file mounts not yet ready when the AP receipt
+is written. It does not change the AP payload or hook sequence. V2 native ELF:
+209,576 bytes, SHA-256
+`fceb24e5f83f3d14358fe4741e5e65611ac68781ab4edb80ff8e839f33010afb`.
+The offline ZIP passed CRC, parser/transport tests and embedded hashes;
+SHA-256 `634e5aa28edc3613a51cd68129d98c9ff240d8547e246ead44114c5d55934795`.
+V2 has not been installed or tested on the console.

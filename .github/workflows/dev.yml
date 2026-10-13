@@ -28,7 +28,7 @@ jobs:
           expected = {
               'byepervisor_reborn_attempt_receipt_v3_1360.elf': '4e303c1a5d409013637bded728602103ab39f4948d3f5888d7e9a5d98c0ab810',
               'attempt_status_v3_1360.elf': '3b17d7e24c44b2341e3a65b133f74f052d95540ba453becd58378aaa2f35e4a5',
-              'byepervisor_reborn_postwake_config_1360.elf': '4736c131f13d6879eabdcde4ea2911678a4d1919e9a2e8e72c7a638d4ba484cd',
+              'byepervisor_reborn_postwake_sigpipe_v2_1360.elf': 'fceb24e5f83f3d14358fe4741e5e65611ac68781ab4edb80ff8e839f33010afb',
               'pldmgr.elf': '62b3ba2a4937c2afc502f9a4e7242cca538610ebb4ae2800c7c6f72e7f268e7c',
               'postwake.txt': '3fd13f6c37d6a3689b0cf74c62fe42f045ecff0211bfe84360f04c284770ce28',
           }
