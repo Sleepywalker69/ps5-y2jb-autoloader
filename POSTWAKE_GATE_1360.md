@@ -272,6 +272,37 @@ the manual-mode 336,789,504-byte UFS2 image. The workflow manifest and
 independent local SHA-256 both equal
 `ff1ec8eea341fc282416ba07047e51a6d0e074019c8ef10bf6b4ccea777725c0`.
 The image is saved privately under `PPSA0165x-postwake-manual-image` with a
-staged, backup-preserving deploy script for both regional titles. It has not
-been uploaded because the PS5 was last reported frozen. The old automatic
-manager image remains installed until a complete upload/readback succeeds.
+staged, backup-preserving deploy script for both regional titles.
+
+### Manual image deployment, 13 October
+
+With both YouTube apps closed, FTP port 2121 accepted the deployment. The
+script preflighted both title paths, hashed each previous image, uploaded and
+fully read back the staged image, preserved each previous `download0.dat` as
+`download0.dat.pre-manual-20261013`, promoted the stage, then fully read back
+the promoted image. Both `/user/download/PPSA01651/download0.dat` and
+`/user/download/PPSA01652/download0.dat` are 336,789,504 bytes and matched
+SHA-256 `ff1ec8eea341fc282416ba07047e51a6d0e074019c8ef10bf6b4ccea777725c0`.
+The prior PPSA01651 image hashed
+`c422ec67babf3a2c19327b48ebc5ad98df872f6722fd3f5e416fc4eed5681a7f`;
+the prior PPSA01652 image hashed
+`7187c22657153ccfcd1ed47afee1303e4e6afa5743355262d3b5d2a95991d9ac`.
+The private `deployment.json` records each step and has SHA-256
+`e3afbea570a3a752ee2b7fa0d2f2a5f3582db52ca4ec2229a551e8d62203a2c1`.
+This verifies installed bytes, not a live manual-mode Rest Mode cycle. No
+YouTube app or downstream payload was launched during deployment.
+
+### First manual-mode wake log, 13 October
+
+After reboot the user reported a responsive console and FTP access. Read-only
+FTP copies of `/user/temp/common_temp/bpr-y2jb-PPSA01651.log` (108 bytes,
+SHA-256 `d7129d53475bff8da81ff094e8ce92356fdcfef70e0f6e39a1b851f989c52716`)
+and `/data/ps5-s3-1360/byepervisor-reborn-1360.log` (6,307 bytes,
+SHA-256 `3822e1702e588a1f3f339e28f6a39cfbe868485971768e9fea804a20f43bc766`)
+were saved privately under `PPSA0165x-postwake-manual-image/fresh-boot-logs`.
+The Y2JB file records arm ID `6ace4bc8e2029059` for PPSA01651. The latest
+stage-log session records AP-complete cleanup and `POSTWAKE_MANUAL` with that
+same ID, and has no `POSTWAKE_PM_READY` entry. This is live evidence that the
+new configuration took the manual branch after one wake. It does not provide
+an independent post-wake gate/IST measurement or prove that no unrelated
+payload was launched by another process.
