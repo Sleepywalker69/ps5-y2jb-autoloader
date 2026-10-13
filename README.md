@@ -3,7 +3,12 @@
 </p>
 <h1 align="center">PS5 Y2JB Autoloader</h1>
 <h3 align="center">Fork of <a href="https://github.com/Gezine/Y2JB">Y2JB</a></h3>
-<p><strong>13.60 optional Payload Manager branch:</strong> The PPSA01651/PPSA01652
+<p><strong>13.60 optional Payload Manager branch: do not deploy yet.</strong> The
+preceding configured receipt-marker image was tested once and the console
+powered off after wake; no current-attempt receipt or marker output was
+recovered. The cause is unknown. This Payload Manager image has never been
+installed or tested and cannot inherit a success result from that failed
+gate. The PPSA01651/PPSA01652
 image is configured to run Relapse and the Byepervisor Rest Mode stage. Its packaged
 <code>postwake.txt</code> selects <code>pldmgr.elf</code> after the native
 same-attempt AP and hook-cleanup receipt passes. The resumed coordinator

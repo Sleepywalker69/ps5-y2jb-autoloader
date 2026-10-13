@@ -1,5 +1,14 @@
 # 13.60 configured ELF execution check
 
+**Live test status (13 October 2026): failed and paused.** With the
+marker-test UFS2 image installed in both YouTube titles, the user reported a
+kernel panic after wake and a powered-off console. No post-wake arm ID,
+independent receipt, marker file, or stage log was collected from that
+attempt. The exact failing component is unknown. This result does not
+validate the optional Payload Manager image on this branch, which remains
+offline-only and uninstalled. See the `postwake-marker-1360` branch's
+test record for the bounded preflight and deployment hashes.
+
 This branch packages `postwake.txt` as
 `elf=postwake_receipt_marker_1360.elf`. The native coordinator sends that
 one ELF only after its current-attempt AP-complete, hook-zero and restored
