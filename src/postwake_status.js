@@ -1,0 +1,127 @@
+/* Post-wake, read-only Byepervisor status gate. No autoload side effects. */
+
+function parse_bpr_status_v1(output, expectedBoot) {
+    if (typeof output !== 'string' || output.length > 4096 ||
+        !expectedBoot || !Number.isSafeInteger(expectedBoot.sec) ||
+        !Number.isSafeInteger(expectedBoot.usec) || expectedBoot.sec <= 0 ||
+        expectedBoot.usec < 0 || expectedBoot.usec >= 1000000) return null;
+    const match = /^BPR_STATUS_V1 ok=1 fw=([0-9a-f]{8}) boot=([0-9]{1,12})\.([0-9]{6}) base=([0-9a-f]{16}) stage=([0-9a-f]{16}) hook=([0-9a-f]{16}) gate=1 ist=1\r?\n$/.exec(output);
+    if (!match || match[1] !== '13600007' ||
+        match[5] !== '41505f434f4d504c' ||
+        match[6] !== '0000000000000000' ||
+        Number(match[2]) !== expectedBoot.sec ||
+        Number(match[3]) !== expectedBoot.usec ||
+        !/^ffffffff[0-9a-f]{8}$/.test(match[4]) ||
+        Number.parseInt(match[4].slice(8), 16) < 0x10000 ||
+        (Number.parseInt(match[4].slice(8), 16) & 0xffff) !== 0) return null;
+    return { bootSec: Number(match[2]), bootUsec: Number(match[3]),
+             textBase: BigInt('0x' + match[4]) };
+}
+
+function bpr_current_boot() {
+    const value = malloc(16n);
+    const size = malloc(8n);
+    write64(size, 16n);
+    if (!sysctlbyname('kern.boottime', value, size, 0n, 0n) ||
+        read64(size) !== 16n) throw new Error('cannot read kern.boottime');
+    const sec = Number(read64(value));
+    const usec = Number(read64(value + 8n));
+    if (!Number.isSafeInteger(sec) || sec <= 0 ||
+        !Number.isSafeInteger(usec) || usec < 0 || usec >= 1000000)
+        throw new Error('invalid kern.boottime');
+    return { sec, usec };
+}
+
+function bpr_syscall_failed(value) {
+    return value > 0x7fffffffffffffffn;
+}
+
+function bpr_status_elf_path() {
+    const name = 'stage_status_1360.elf';
+    for (const slot of ['000', '001', '002']) {
+        const path = '/mnt/sandbox/' + TITLE_ID + '_' + slot +
+            '/download0/cache/splash_screen/aHR0cHM6Ly93d3cueW91dHViZS5jb20vdHY=/' + name;
+        const stat = malloc(0x100n);
+        if (syscall(SYSCALL.stat, alloc_string(path), stat) === 0n)
+            return path;
+    }
+    throw new Error('post-wake status ELF is missing from this title');
+}
+
+function bpr_read_elf(path) {
+    const stat = malloc(0x100n);
+    if (syscall(SYSCALL.stat, alloc_string(path), stat) !== 0n)
+        throw new Error('cannot stat status ELF');
+    const size = read64(stat + 0x48n);
+    if (size <= 0n || size > 262144n)
+        throw new Error('invalid status ELF length');
+    const fd = syscall(SYSCALL.open, alloc_string(path), O_RDONLY, 0n);
+    if (bpr_syscall_failed(fd)) throw new Error('cannot open status ELF');
+    const bytes = malloc(size);
+    try {
+        let total = 0n;
+        while (total < size) {
+            const got = syscall(SYSCALL.read, fd, bytes + total, size - total);
+            if (got <= 0n || got > size - total || bpr_syscall_failed(got))
+                throw new Error('incomplete status ELF read');
+            total += got;
+        }
+    } finally {
+        syscall(SYSCALL.close, fd);
+    }
+    return { bytes, size };
+}
+
+function bpr_query_elfldr_status(expectedBoot) {
+    const payload = bpr_read_elf(bpr_status_elf_path());
+    const fd = syscall(SYSCALL.socket, AF_INET, SOCK_STREAM, 0n);
+    if (bpr_syscall_failed(fd)) throw new Error('status socket failed');
+    try {
+        const timeout = malloc(16n);
+        write64(timeout, 3n);
+        write64(timeout + 8n, 0n);
+        if (syscall(SYSCALL.setsockopt, fd, SOL_SOCKET, 0x1006n,
+                    timeout, 16n) !== 0n)
+            throw new Error('status socket timeout failed');
+        const address = malloc(16n);
+        write8(address, 16n);
+        write8(address + 1n, AF_INET);
+        write16(address + 2n, 0x3d23n); // 127.0.0.1:9021
+        write32(address + 4n, 0x0100007fn);
+        if (syscall(SYSCALL.connect, fd, address, 16n) !== 0n)
+            throw new Error('elfldr is unavailable after wake');
+        let sent = 0n;
+        while (sent < payload.size) {
+            const n = syscall(SYSCALL.write, fd, payload.bytes + sent,
+                              payload.size - sent);
+            if (n <= 0n || n > payload.size - sent || bpr_syscall_failed(n))
+                throw new Error('status ELF send was incomplete');
+            sent += n;
+        }
+        if (syscall(134n, fd, 1n) !== 0n) // shutdown(SHUT_WR)
+            throw new Error('status socket shutdown failed');
+        const buffer = malloc(512n);
+        const collected = [];
+        for (;;) {
+            const n = syscall(SYSCALL.read, fd, buffer, 512n);
+            if (bpr_syscall_failed(n))
+                throw new Error('status reply timed out or failed');
+            if (n === 0n) break;
+            if (n > 512n || collected.length + Number(n) > 4096)
+                throw new Error('status reply is too large');
+            for (const byte of read_buffer(buffer, n)) collected.push(byte);
+            if (collected.includes(10)) break;
+        }
+        const reply = new TextDecoder().decode(new Uint8Array(collected));
+        if (!reply.endsWith('\n')) throw new Error('status reply is truncated');
+        const status = parse_bpr_status_v1(reply, expectedBoot);
+        if (!status) throw new Error('post-wake AP status did not pass');
+        return status;
+    } finally {
+        syscall(SYSCALL.close, fd);
+    }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { parse_bpr_status_v1 };
+}
