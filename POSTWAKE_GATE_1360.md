@@ -58,3 +58,9 @@ kernel dump, synthetic ELF, or IDA database. The current local ZIP SHA-256 is
 `5a14039ce64ca55ed0a5e7cfdd850f2efa228eb4da31dbb53b3d1b6144cf90ca9`.
 No `download0.dat` has yet been generated from this ZIP, and neither title has
 been modified with this candidate.
+
+The feature branch's existing `.github/workflows/dev.yml` dispatch path now
+builds an artifact-only UFS2 image with no release step. GitHub did not accept
+dispatch of a new workflow file that was absent from the fork's default branch
+(`HTTP 404: workflow receipt-test.yml not found on the default branch`), so
+the existing workflow ID is used for this branch build instead.

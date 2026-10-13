@@ -1,110 +1,71 @@
-name: Dev Build and Release
+name: 13.60 Receipt Test Image
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-and-release:
+  build-image:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-
+      contents: read
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-
-      - name: Build Package
-        id: build_package
-        run: ./build.sh --dev --download-deps
-
-      - name: Prepare download0 directory
+      - name: Verify source and build update ZIP
+        run: |
+          node tests/postwake_status.test.js
+          node tests/postwake_transport.test.js
+          node --check src/main.js
+          node --check src/postwake_status.js
+          ./build.sh --dev --download-deps
+          python3 - <<'PY'
+          import hashlib, zipfile
+          expected = {
+              'byepervisor_reborn_attempt_receipt_v3_1360.elf': '4e303c1a5d409013637bded728602103ab39f4948d3f5888d7e9a5d98c0ab810',
+              'attempt_status_v3_1360.elf': '3b17d7e24c44b2341e3a65b133f74f052d95540ba453becd58378aaa2f35e4a5',
+          }
+          with zipfile.ZipFile('y2jb_update.zip') as archive:
+              assert archive.testzip() is None
+              for name, digest in expected.items():
+                  actual = hashlib.sha256(archive.read(name)).hexdigest()
+                  assert actual == digest, (name, actual)
+                  print(name, actual)
+              assert not any('kernel-dump' in n or n.endswith('.i64') or
+                             n.endswith('.synthetic.elf') for n in archive.namelist())
+          PY
+      - name: Populate download0 directory
         run: |
           mkdir -p download0/cache/splash_screen/aHR0cHM6Ly93d3cueW91dHViZS5jb20vdHY=
           unzip -q y2jb_update.zip -d download0/cache/splash_screen/aHR0cHM6Ly93d3cueW91dHViZS5jb20vdHY=
-          rm -f download0/cache/splash_screen/aHR0cHM6Ly93d3cueW91dHViZS5jb20vdHY=/update-info.txt
-
-      - name: Create UFS2 download0.dat in FreeBSD
+          rm download0/cache/splash_screen/aHR0cHM6Ly93d3cueW91dHViZS5jb20vdHY=/update-info.txt
+      - name: Create UFS2 download0.dat
         uses: vmactions/freebsd-vm@v1
         with:
-          release: "14.2"
+          release: '14.2'
           copyback: true
           run: |
             set -e
-
-            # 1. Create 336789504 byte image file
             truncate -s 336789504 download0.dat
-
-            # 2. Attach as memory disk (returns e.g. "md0")
             MD=$(mdconfig -a -t vnode -f "$(pwd)/download0.dat")
-
-            # 3. Create UFS2 filesystem
-            # -b 32768 (Block size), -f 4096 (Fragment size)
             newfs -O 2 -b 32768 -f 4096 /dev/${MD}
-
-            # 4. Mount
             mount /dev/${MD} /mnt
-
-            # 5. Copy all contents
             cp -R download0/* /mnt/
-
-            # 6. Set permissions
             chmod -R 777 /mnt/*
-
-            # 7. Unmount and detach
             umount /mnt
             mdconfig -d -u ${MD}
-
-      - name: Verify image and cleanup
+      - name: Record image hash
         run: |
-          file download0.dat
-          rm -rf download0
-
-      - name: Get Version
-        id: get_version
-        run: |
-          VERSION=$(make print-version BUILD_TYPE=dev)
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          LAST_STABLE_TAG=$(git tag --sort=-creatordate | grep -v "\-dev\-" | grep -v "^${VERSION}$" | head -n 1)
-          echo "last_stable_tag=${LAST_STABLE_TAG}" >> $GITHUB_OUTPUT
-
-      - name: Create Dev Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ steps.get_version.outputs.version }}
-          TARGET_COMMIT: ${{ github.sha }}
-          LAST_STABLE_TAG: ${{ steps.get_version.outputs.last_stable_tag }}
-          ELFLDR_VER: ${{ steps.build_package.outputs.elfldr_ver }}
-          KEXP_VER: ${{ steps.build_package.outputs.kexp_ver }}
-          AUTOLOADER_VER: ${{ steps.build_package.outputs.unified_autoloader_ver }}
-        run: |
-          cat <<EOF > release_notes.md
-          - ### Changelog:
-
-          **Full Changelog (since last stable release)**: https://github.com/${GITHUB_REPOSITORY}/compare/${LAST_STABLE_TAG}...${TAG_NAME}
-
-          ---
-          <details>
-          <summary>Bundled Binaries</summary>
-
-          This build integrates the following external dependency versions:
-          - [itsPLK/ps5-elfldr](https://github.com/itsPLK/ps5-elfldr): [${ELFLDR_VER}](https://github.com/itsPLK/ps5-elfldr/releases/tag/${ELFLDR_VER})
-          - The pinned elfldr release binary is patched by `scripts/patch_elfldr_lan.py` to bind `0.0.0.0:9021` for this isolated PPSA01652 test. The script verifies the original hash and exact two-byte change.
-          - [itsPLK/ps5-kexp](https://github.com/itsPLK/ps5-kexp): [${KEXP_VER}](https://github.com/itsPLK/ps5-kexp/releases/tag/${KEXP_VER})
-          - [itsPLK/ps5-unified-autoloader](https://github.com/itsPLK/ps5-unified-autoloader): [${AUTOLOADER_VER}](https://github.com/itsPLK/ps5-unified-autoloader/releases/tag/${AUTOLOADER_VER})
-
-          </details>
-          EOF
-
-          gh release create "$TAG_NAME" y2jb_update.zip download0.dat \
-            --target "$TARGET_COMMIT" \
-            --title "$TAG_NAME" \
-            --notes-file release_notes.md \
-            --prerelease
+          sha256sum download0.dat > download0.dat.sha256
+          cat download0.dat.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: y2jb-1360-v3-receipt-test
+          path: |
+            download0.dat
+            download0.dat.sha256
+          retention-days: 7
