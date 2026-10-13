@@ -1,1 +1,1 @@
-elf=pldmgr.elf
+manual

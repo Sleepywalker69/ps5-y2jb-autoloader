@@ -228,3 +228,42 @@ the post-chain discrepancy. Automatic manager readiness is demonstrated on
 three distinct attempts; the later gate/IST invariant remains failed.
 The next measurement needs to bracket manager autoload, without assuming
 which downstream payload changes the fields.
+
+### Stability hold after the third attempt
+
+At about 15:05 UTC, the user reported the PS5 frozen after the full-minute
+wake and six-payload manager autoload. No kernel-text reader or diagnostic
+watcher had been sent on that boot. The last console actions were the
+bounded V3 status ELF and a read-only manager log request. The cause of the
+freeze is unproved. No additional console request is authorized by this
+record until the user reports recovery and a fresh boot.
+
+An offline host watcher candidate is being prepared to compare the pinned
+V3 receipt during the manager countdown with the same receipt after
+manager-side autoload completion. It has not run live; the current image
+still contains the same tested V2 payload and manager configuration.
+
+## Manual post-wake mode after the stability failure
+
+After the third full-minute run, the user reported the PS5 frozen. They chose
+to remove all automatic post-wake payload launches and use Relapse to launch
+later ELFs manually. The new package changes only `src/postwake.txt` from
+`elf=pldmgr.elf` to `manual` (7 bytes, SHA-256
+`cd60ed2fa8c947cb05cb57b23884dea9390e4b6aec0add666e69bf842fc68da0`).
+The resumed Byepervisor ELF, AP hook sequence and Y2JB Relapse path remain
+unchanged. The native config parser returns its no-launch result for
+`manual\n`; its existing host test covers that exact input. The package
+still contains Payload Manager as an inert optional file. The main Y2JB JS
+returns before the upstream autoloader path, so no later ELF is scheduled
+from JavaScript. Parser (48 cases), transport (five cases) and syntax checks
+passed offline. A new UFS2 image and console install remain pending; both
+currently installed titles still contain the automatic-manager V2 image.
+The local WSL build (`bash build.sh --dev --download-deps`) passed and produced
+`y2jb_update.zip`, SHA-256
+`2126fcdec30ffe6b4135d718f91c000e417d39e7db6cdb4d9198ddc2e1077556`.
+ZIP CRC passed; its `postwake.txt` is exactly `manual\n`; the Byepervisor ELF
+and inert Payload Manager ELF retain their pinned hashes, and the archive
+contains no private kernel dump, synthetic ELF or IDA database. Windows
+Clang could not compile the native parser test because it reported no Visual
+Studio installation; the same test compiled and ran successfully with WSL
+`cc -std=c11 -Wall -Wextra -Werror`. This is an offline/package result only.
