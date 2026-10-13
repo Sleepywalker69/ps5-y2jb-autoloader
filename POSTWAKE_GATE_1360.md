@@ -123,4 +123,15 @@ Native coordinator ELF: 209,408 bytes, SHA-256
 `4736c131f13d6879eabdcde4ea2911678a4d1919e9a2e8e72c7a638d4ba484cd`.
 Payload Manager v0.5.2 ELF: 2,410,776 bytes, SHA-256
 `62b3ba2a4937c2afc502f9a4e7242cca538610ebb4ae2800c7c6f72e7f268e7c`.
-No console installation or live launch of this revised package has occurred.
+The revised package had not been installed at this offline gate.
+Payload Manager retains control of its own autoload settings after it starts.
+GitHub Actions run `38413832508` passed and produced a 336,789,504-byte UFS2
+image from commit `02dcc79`, SHA-256
+`f5191fa528ac86eeaaeeb9f55574d826e0554b4ba9c0a490e788598f1b55e0d8`.
+The workflow manifest and independent local hash match. The image was then
+installed while both YouTube titles were closed. ftpsrv on port 2121 staged,
+fully read back, promoted and fully read back each title image. Both PPSA01651
+and PPSA01652 matched the new image hash above. Prior copies remain as
+`download0.dat.pre-postwake-20261013`. The 1,197-byte local deployment report
+has SHA-256 `30af26db8a2fc2386e0ce0dcb220da5920fdb4bb5e1bd87ad6ae4e930e64b82c`.
+No new-image live launch has occurred yet.
