@@ -156,3 +156,14 @@ is written. It does not change the AP payload or hook sequence. V2 native ELF:
 The offline ZIP passed CRC, parser/transport tests and embedded hashes;
 SHA-256 `634e5aa28edc3613a51cd68129d98c9ff240d8547e246ead44114c5d55934795`.
 V2 has not been installed or tested on the console.
+
+GitHub Actions run `38415881929` passed for commit `e454eda`. The downloaded
+UFS2 image was 336,789,504 bytes; the workflow manifest and independent local
+SHA-256 matched `7187c22657153ccfcd1ed47afee1303e4e6afa5743355262d3b5d2a95991d9ac`.
+Both PPSA01651 and PPSA01652 were staged and promoted via ftpsrv, with full
+hash readbacks matching before and after promotion. The previous images were
+retained as `download0.dat.pre-postwake-v2-20261013`. The local deployment
+report SHA-256 is `810f28a322ab9cdfe6f055d73db4365ae06fb2f37478a70cd647cf7363339efd`.
+PPSA01651's old image hash differed from the expected V1 image, while
+PPSA01652's matched V1; that difference is unexplained. Installed bytes do
+not establish that V2 executes or launches Payload Manager automatically.
