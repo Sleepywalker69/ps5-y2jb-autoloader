@@ -12,10 +12,12 @@ additional ELF after wake. A matching AP-complete receipt, zero hook state, and
 restored gate/IST were observed on one console. That result does not establish
 working kstuff, fPKG support, or compatibility with other consoles or firmware.
 
-Use the `download0.dat` from the
+When published, get `download0.dat` from the
+[release ZIP](https://github.com/Sleepywalker69/ps5-y2jb-autoloader/releases).
+Until then, use the
 [manual-mode Actions artifact](https://github.com/Sleepywalker69/ps5-y2jb-autoloader/actions/runs/38419602775/artifacts/11825497668)
-(`y2jb-1360-postwake-config-test`). A release ZIP may also contain this same
-file; check its hash before installation:
+(`y2jb-1360-postwake-config-test`). Check the extracted file's hash before
+installation:
 
 ```text
 SHA-256  ff1ec8eea341fc282416ba07047e51a6d0e074019c8ef10bf6b4ccea777725c0
